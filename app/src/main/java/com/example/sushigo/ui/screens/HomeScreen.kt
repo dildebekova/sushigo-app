@@ -1,17 +1,22 @@
 package com.example.sushigo.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +31,8 @@ import com.example.sushigo.ui.viewmodel.HomeViewModel
 @Composable
 fun HomeScreen(
     onCategoryClick: (String) -> Unit,
+    onProductClick: (Int) -> Unit,
+    onCartClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val categories by viewModel.categories.collectAsState()
@@ -33,15 +40,29 @@ fun HomeScreen(
     var searchQuery by remember { mutableStateOf("") }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = { 
                     Text(
                         "SushiGo", 
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-1).sp
+                        ),
                         color = MaterialTheme.colorScheme.primary
                     ) 
-                }
+                },
+                actions = {
+                    IconButton(onClick = onCartClick) {
+                        Icon(
+                            Icons.Default.ShoppingCart, 
+                            contentDescription = "Cart", 
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { padding ->
@@ -50,37 +71,38 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Поиск - используем remember для текста, чтобы не тормозило при вводе
+            // Search Bar
             item(key = "search_bar") {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    placeholder = { Text("Поиск роллов...") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    shape = RoundedCornerShape(12.dp),
+                        .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
+                        .shadow(4.dp, RoundedCornerShape(24.dp)),
+                    placeholder = { Text("What are you craving?") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                    shape = RoundedCornerShape(24.dp),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color.LightGray
+                        unfocusedBorderColor = Color.Transparent
                     )
                 )
             }
 
-            item(key = "promo_banner") { PromoBanner() }
-
-            item(key = "categories_title") {
-                Text(
-                    text = "Категории",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+            // Promo Banner
+            item(key = "promo_banner") {
+                PromoBanner()
             }
 
-            // Категории с ключами для мгновенной прокрутки
+            item(key = "categories_title") {
+                SectionHeader("Categories")
+            }
+
+            // Categories list with Keys for performance
             item(key = "categories_list") {
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp),
@@ -95,22 +117,29 @@ fun HomeScreen(
 
             if (popularProducts.isNotEmpty()) {
                 item(key = "popular_title") {
-                    Text(
-                        text = "Популярное",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
-                    )
+                    SectionHeader("Popular Right Now")
                 }
                 
                 item(key = "popular_list") {
-                    PopularProductsRow(popularProducts)
+                    PopularProductsRow(
+                        products = popularProducts, 
+                        onProductClick = onProductClick
+                    )
                 }
             }
             
-            item { Spacer(modifier = Modifier.height(16.dp)) }
+            item { Spacer(modifier = Modifier.height(24.dp)) }
         }
     }
+}
+
+@Composable
+fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 12.dp)
+    )
 }
 
 @Composable
@@ -118,23 +147,49 @@ fun PromoBanner() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(140.dp)
-            .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            .height(150.dp)
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f).padding(16.dp)) {
-                Text("Скидка 20%", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
-                Text("на первый заказ!", style = MaterialTheme.typography.bodySmall)
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = { }) { Text("Забрать") }
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(20.dp)
+            ) {
+                Text(
+                    "Discount -20%", 
+                    color = Color.White,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "on your first order", 
+                    color = Color.White.copy(alpha = 0.8f),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = { },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    Text("Get it now", fontWeight = FontWeight.Bold)
+                }
             }
             Box(
-                modifier = Modifier.fillMaxHeight().width(100.dp).background(MaterialTheme.colorScheme.secondaryContainer),
+                modifier = Modifier
+                    .size(120.dp)
+                    .padding(end = 16.dp)
+                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text("🍣", fontSize = 40.sp)
+                Text("🍣", fontSize = 60.sp)
             }
         }
     }
@@ -144,39 +199,92 @@ fun PromoBanner() {
 fun CategoryChip(category: String, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
         modifier = Modifier.height(44.dp)
     ) {
-        Box(modifier = Modifier.padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
-            Text(text = category, style = MaterialTheme.typography.labelLarge)
+        Box(
+            modifier = Modifier.padding(horizontal = 20.dp), 
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = category, 
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
 
 @Composable
-fun PopularProductsRow(products: List<Product>) {
+fun PopularProductsRow(
+    products: List<Product>,
+    onProductClick: (Int) -> Unit
+) {
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Ключи по ID продукта - самое важное для производительности
         items(products, key = { it.id }) { product ->
-            Card(
-                modifier = Modifier.width(160.dp),
-                shape = RoundedCornerShape(12.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column {
-                    AsyncImage(
-                        model = product.image,
-                        contentDescription = product.name,
-                        modifier = Modifier.fillMaxWidth().height(100.dp),
-                        contentScale = ContentScale.Crop
+            PopularProductCard(
+                product = product,
+                onClick = { onProductClick(product.id) }
+            )
+        }
+    }
+}
+
+@Composable
+fun PopularProductCard(
+    product: Product,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(170.dp)
+            .padding(vertical = 4.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(18.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column {
+            AsyncImage(
+                model = product.image,
+                contentDescription = product.name,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(110.dp)
+                    .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)),
+                contentScale = ContentScale.Crop
+            )
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    text = product.name, 
+                    fontWeight = FontWeight.Bold, 
+                    maxLines = 1, 
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${product.price.toInt()} KGS",
+                        color = MaterialTheme.colorScheme.primary, 
+                        fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.titleMedium
                     )
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        Text(product.name, fontWeight = FontWeight.Bold, maxLines = 1, style = MaterialTheme.typography.bodyMedium)
-                        Text("${product.price} ₽", color = MaterialTheme.colorScheme.primary)
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("+", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }

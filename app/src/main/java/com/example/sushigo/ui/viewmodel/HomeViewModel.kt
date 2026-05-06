@@ -16,7 +16,7 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val repository: SushiRepository
 ) : ViewModel() {
-    private val _categories = MutableStateFlow(listOf("Комбо наборы", "Сеты", "Напитки", "Пицца", "Сладости"))
+    private val _categories = MutableStateFlow(listOf("Combo Sets", "Sushi Rolls", "Pizza", "Drinks", "Snacks"))
     val categories = _categories.asStateFlow()
 
     val popularProducts: StateFlow<List<Product>> = repository.getAllProducts()

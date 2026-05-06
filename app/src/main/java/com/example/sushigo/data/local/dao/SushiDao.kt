@@ -4,12 +4,16 @@ import androidx.room.*
 import com.example.sushigo.data.local.entity.CartEntity
 import com.example.sushigo.data.local.entity.ProductEntity
 import com.example.sushigo.data.local.entity.RestaurantEntity
+import com.example.sushigo.data.local.entity.UserEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SushiDao {
     @Query("SELECT * FROM products")
     fun getAllProducts(): Flow<List<ProductEntity>>
+
+    @Query("SELECT COUNT(*) FROM products")
+    suspend fun getProductCount(): Int
 
     @Query("SELECT * FROM products WHERE category = :category")
     fun getProductsByCategory(category: String): Flow<List<ProductEntity>>
@@ -43,6 +47,16 @@ interface SushiDao {
     @Query("SELECT * FROM restaurants")
     fun getRestaurants(): Flow<List<RestaurantEntity>>
 
+    @Query("SELECT COUNT(*) FROM restaurants")
+    suspend fun getRestaurantCount(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRestaurants(restaurants: List<RestaurantEntity>)
+
+    // User operations
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertUser(user: UserEntity)
+
+    @Query("SELECT * FROM users WHERE name = :name LIMIT 1")
+    suspend fun getUserByName(name: String): UserEntity?
 }

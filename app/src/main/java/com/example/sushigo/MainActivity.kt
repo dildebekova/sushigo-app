@@ -6,14 +6,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -34,27 +34,47 @@ class MainActivity : ComponentActivity() {
         setContent {
             val mainViewModel: MainViewModel = hiltViewModel()
             val isDarkModePref by mainViewModel.isDarkMode.collectAsState()
-
-            // Use system theme if preference is not set (null)
             val useDarkTheme = isDarkModePref ?: isSystemInDarkTheme()
 
             SushigoTheme(darkTheme = useDarkTheme) {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
-
-                // Show bottom bar only on main screens
                 val showBottomBar = bottomNavItems.any { it.route == currentDestination?.route }
 
                 Scaffold(
                     bottomBar = {
                         if (showBottomBar) {
-                            NavigationBar {
+                            NavigationBar(
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                                    .clip(RoundedCornerShape(32.dp)), // Делаем панель "плавающей"
+                                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                                tonalElevation = 8.dp
+                            ) {
                                 bottomNavItems.forEach { screen ->
+                                    val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
                                     NavigationBarItem(
-                                        icon = { screen.icon?.let { Icon(it, contentDescription = screen.title) } },
-                                        label = { Text(screen.title) },
-                                        selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                                        icon = { 
+                                            screen.icon?.let { 
+                                                Icon(
+                                                    it, 
+                                                    contentDescription = screen.title,
+                                                    tint = if (selected) MaterialTheme.colorScheme.primary else Color.Gray
+                                                ) 
+                                            } 
+                                        },
+                                        label = { 
+                                            Text(
+                                                screen.title, 
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = if (selected) MaterialTheme.colorScheme.primary else Color.Gray
+                                            ) 
+                                        },
+                                        selected = selected,
+                                        colors = NavigationBarItemDefaults.colors(
+                                            indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                        ),
                                         onClick = {
                                             navController.navigate(screen.route) {
                                                 popUpTo(navController.graph.findStartDestination().id) {

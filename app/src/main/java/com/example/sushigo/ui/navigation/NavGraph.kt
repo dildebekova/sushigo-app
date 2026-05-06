@@ -23,6 +23,12 @@ fun NavGraph(
             HomeScreen(
                 onCategoryClick = { category ->
                     navController.navigate(Screen.CategoryProducts.createRoute(category))
+                },
+                onProductClick = { productId ->
+                    navController.navigate(Screen.ProductDetail.createRoute(productId))
+                },
+                onCartClick = {
+                    navController.navigate(Screen.Cart.route)
                 }
             )
         }

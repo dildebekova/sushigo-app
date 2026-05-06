@@ -1,6 +1,7 @@
 package com.example.sushigo.domain.repository
 
 import com.example.sushigo.data.local.entity.CartEntity
+import com.example.sushigo.data.local.entity.UserEntity
 import com.example.sushigo.domain.model.Product
 import com.example.sushigo.domain.model.Restaurant
 import kotlinx.coroutines.flow.Flow
@@ -14,4 +15,8 @@ interface SushiRepository {
     suspend fun updateCartItem(item: CartEntity)
     suspend fun removeFromCart(cartItem: CartEntity)
     fun getRestaurants(): Flow<List<Restaurant>>
+
+    // User operations
+    suspend fun registerUser(name: String, phone: String)
+    suspend fun loginUser(name: String): UserEntity?
 }
