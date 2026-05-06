@@ -18,12 +18,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.sushigo.domain.model.Product
-import com.example.sushigo.ui.theme.SushigoTheme
 import com.example.sushigo.ui.viewmodel.CategoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,40 +45,28 @@ fun CategoryScreen(
             )
         }
     ) { padding ->
-        CategoryContent(
-            products = products,
-            onProductClick = onProductClick,
-            modifier = Modifier.padding(padding)
-        )
-    }
-}
-
-@Composable
-fun CategoryContent(
-    products: List<Product>,
-    onProductClick: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    if (products.isEmpty()) {
-        Box(
-            modifier = modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("В этой категории пока нет товаров", style = MaterialTheme.typography.bodyLarge)
-        }
-    } else {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(products) { product ->
-                ProductGridItem(
-                    product = product,
-                    onClick = { onProductClick(product.id) }
-                )
+        if (products.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("В этой категории пока нет товаров", style = MaterialTheme.typography.bodyLarge)
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Добавляем key = { it.id } для плавной прокрутки и защиты от фризов
+                items(products, key = { it.id }) { product ->
+                    ProductGridItem(
+                        product = product,
+                        onClick = { onProductClick(product.id) }
+                    )
+                }
             }
         }
     }
@@ -92,9 +78,7 @@ fun ProductGridItem(
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -116,7 +100,6 @@ fun ProductGridItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "${product.price} ₽",
                     style = MaterialTheme.typography.bodyLarge,
@@ -127,23 +110,12 @@ fun ProductGridItem(
                 Button(
                     onClick = onClick,
                     modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(0.dp),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = PaddingValues(0.dp)
                 ) {
-                    Text("Выбрать", style = MaterialTheme.typography.labelLarge)
+                    Text("Выбрать")
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ProductItemPreview() {
-    SushigoTheme {
-        ProductGridItem(
-            product = Product(1, "Филадельфия", 450.0, "", "Сеты"),
-            onClick = {}
-        )
     }
 }
