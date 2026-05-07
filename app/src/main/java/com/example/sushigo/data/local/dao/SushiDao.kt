@@ -1,10 +1,7 @@
 package com.example.sushigo.data.local.dao
 
 import androidx.room.*
-import com.example.sushigo.data.local.entity.CartEntity
-import com.example.sushigo.data.local.entity.ProductEntity
-import com.example.sushigo.data.local.entity.RestaurantEntity
-import com.example.sushigo.data.local.entity.UserEntity
+import com.example.sushigo.data.local.entity.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -59,4 +56,11 @@ interface SushiDao {
 
     @Query("SELECT * FROM users WHERE name = :name LIMIT 1")
     suspend fun getUserByName(name: String): UserEntity?
+
+    // Order operations
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrder(order: OrderEntity)
+
+    @Query("SELECT * FROM orders WHERE userName = :userName ORDER BY timestamp DESC")
+    fun getOrdersByUserName(userName: String): Flow<List<OrderEntity>>
 }

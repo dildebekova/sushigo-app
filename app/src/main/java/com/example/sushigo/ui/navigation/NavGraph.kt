@@ -79,7 +79,17 @@ fun NavGraph(
         }
 
         composable(Screen.Settings.route) {
-            SettingsScreen()
+            SettingsScreen(
+                onNotificationsClick = {
+                    navController.navigate(Screen.Notifications.route)
+                }
+            )
+        }
+
+        composable(Screen.Notifications.route) {
+            NotificationsScreen(
+                onBackClick = { navController.popBackStack() }
+            )
         }
     }
 }

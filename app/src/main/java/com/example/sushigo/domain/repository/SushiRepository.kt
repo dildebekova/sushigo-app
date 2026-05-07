@@ -1,6 +1,7 @@
 package com.example.sushigo.domain.repository
 
 import com.example.sushigo.data.local.entity.CartEntity
+import com.example.sushigo.data.local.entity.OrderEntity
 import com.example.sushigo.data.local.entity.UserEntity
 import com.example.sushigo.domain.model.Product
 import com.example.sushigo.domain.model.Restaurant
@@ -14,9 +15,14 @@ interface SushiRepository {
     suspend fun addToCart(product: Product)
     suspend fun updateCartItem(item: CartEntity)
     suspend fun removeFromCart(cartItem: CartEntity)
+    suspend fun clearCart()
     fun getRestaurants(): Flow<List<Restaurant>>
 
     // User operations
     suspend fun registerUser(name: String, phone: String)
     suspend fun loginUser(name: String): UserEntity?
+
+    // Order operations
+    suspend fun placeOrder(order: OrderEntity)
+    fun getOrdersByUserName(userName: String): Flow<List<OrderEntity>>
 }

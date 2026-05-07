@@ -26,6 +26,7 @@ import com.example.sushigo.ui.viewmodel.MainViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    onNotificationsClick: () -> Unit,
     viewModel: MainViewModel = hiltViewModel()
 ) {
     val isDarkMode by viewModel.isDarkMode.collectAsState()
@@ -108,9 +109,9 @@ fun SettingsScreen(
                         checked = isDarkMode ?: false,
                         onCheckedChange = { viewModel.toggleTheme(it) }
                     )
-                    SettingsNavigationItem(Icons.Default.Notifications, "Notifications")
-                    SettingsNavigationItem(Icons.Default.Favorite, "Favorites")
-                    SettingsNavigationItem(Icons.Default.Info, "About App")
+                    SettingsNavigationItem(Icons.Default.Notifications, "Notifications", onClick = onNotificationsClick)
+                    SettingsNavigationItem(Icons.Default.Favorite, "Favorites", onClick = {})
+                    SettingsNavigationItem(Icons.Default.Info, "About App", onClick = {})
                 }
             }
 
@@ -212,9 +213,9 @@ fun AuthForm(
 }
 
 @Composable
-fun SettingsNavigationItem(icon: ImageVector, title: String) {
+fun SettingsNavigationItem(icon: ImageVector, title: String, onClick: () -> Unit) {
     Surface(
-        onClick = {},
+        onClick = onClick,
         color = Color.Transparent,
         modifier = Modifier.fillMaxWidth()
     ) {

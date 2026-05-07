@@ -1,11 +1,7 @@
 package com.example.sushigo.data.repository
 
 import com.example.sushigo.data.local.dao.SushiDao
-import com.example.sushigo.data.local.entity.CartEntity
-import com.example.sushigo.data.local.entity.ProductEntity
-import com.example.sushigo.data.local.entity.RestaurantEntity
-import com.example.sushigo.data.local.entity.UserEntity
-import com.example.sushigo.data.local.entity.toDomain
+import com.example.sushigo.data.local.entity.*
 import com.example.sushigo.domain.model.Product
 import com.example.sushigo.domain.model.Restaurant
 import com.example.sushigo.domain.repository.SushiRepository
@@ -65,6 +61,10 @@ class SushiRepositoryImpl @Inject constructor(
         sushiDao.removeFromCart(cartItem)
     }
 
+    override suspend fun clearCart() {
+        sushiDao.clearCart()
+    }
+
     override fun getRestaurants(): Flow<List<Restaurant>> {
         return sushiDao.getRestaurants()
             .onStart { seedDatabaseIfNeeded() }
@@ -77,6 +77,14 @@ class SushiRepositoryImpl @Inject constructor(
 
     override suspend fun loginUser(name: String): UserEntity? {
         return sushiDao.getUserByName(name)
+    }
+
+    override suspend fun placeOrder(order: OrderEntity) {
+        sushiDao.insertOrder(order)
+    }
+
+    override fun getOrdersByUserName(userName: String): Flow<List<OrderEntity>> {
+        return sushiDao.getOrdersByUserName(userName)
     }
 
     private suspend fun seedDatabaseIfNeeded() {

@@ -13,6 +13,9 @@ sealed class Screen(val route: String, val title: String = "", val icon: ImageVe
     object Cart : Screen("cart", "Корзина", Icons.Default.ShoppingCart)
     object Settings : Screen("settings", "Профиль", Icons.Default.Person)
     
+    // Notifications screen (not in bottom nav)
+    object Notifications : Screen("notifications")
+    
     object CategoryProducts : Screen("category/{categoryName}") {
         fun createRoute(categoryName: String) = "category/$categoryName"
     }
