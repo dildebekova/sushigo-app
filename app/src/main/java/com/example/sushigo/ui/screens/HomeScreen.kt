@@ -19,10 +19,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.sushigo.domain.model.Product
 import com.example.sushigo.ui.viewmodel.HomeViewModel
@@ -35,102 +37,122 @@ fun HomeScreen(
     onCartClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val categories by viewModel.categories.collectAsState()
-    val popularProducts by viewModel.popularProducts.collectAsState()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val popularProducts by viewModel.popularProducts.collectAsStateWithLifecycle()
     var searchQuery by remember { mutableStateOf("") }
+
+    val filteredProducts = remember(popularProducts, searchQuery) {
+        if (searchQuery.isBlank()) popularProducts
+        else popularProducts.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        "SushiGo", 
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-1).sp
-                        ),
-                        color = MaterialTheme.colorScheme.primary
-                    ) 
-                },
-                actions = {
-                    IconButton(onClick = onCartClick) {
-                        Icon(
-                            Icons.Default.ShoppingCart, 
-                            contentDescription = "Cart", 
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-            )
+            HomeTopBar(onCartClick = onCartClick)
         }
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(padding),
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
-            // Search Bar
             item(key = "search_bar") {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
-                        .shadow(4.dp, RoundedCornerShape(24.dp)),
-                    placeholder = { Text("What are you craving?") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                    shape = RoundedCornerShape(24.dp),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color.Transparent
-                    )
+                SearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it }
                 )
             }
 
-            // Promo Banner
             item(key = "promo_banner") {
                 PromoBanner()
             }
 
-            item(key = "categories_title") {
-                SectionHeader("Categories")
-            }
-
-            // Categories list with Keys for performance
-            item(key = "categories_list") {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.padding(vertical = 8.dp)
-                ) {
-                    items(categories, key = { it }) { category ->
-                        CategoryChip(category = category, onClick = { onCategoryClick(category) })
+            item(key = "categories_section") {
+                Column {
+                    SectionHeader("Categories")
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    ) {
+                        items(categories, key = { it }) { category ->
+                            CategoryChip(category = category, onClick = { onCategoryClick(category) })
+                        }
                     }
                 }
             }
 
-            if (popularProducts.isNotEmpty()) {
+            if (filteredProducts.isNotEmpty()) {
                 item(key = "popular_title") {
-                    SectionHeader("Popular Right Now")
+                    SectionHeader(if (searchQuery.isEmpty()) "Popular Right Now" else "Search Results")
                 }
                 
                 item(key = "popular_list") {
                     PopularProductsRow(
-                        products = popularProducts, 
+                        products = filteredProducts,
                         onProductClick = onProductClick
                     )
                 }
+            } else if (searchQuery.isNotEmpty()) {
+                item {
+                    Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        Text("No products found", color = Color.Gray)
+                    }
+                }
             }
-            
-            item { Spacer(modifier = Modifier.height(24.dp)) }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HomeTopBar(onCartClick: () -> Unit) {
+    TopAppBar(
+        title = {
+            Text(
+                "SushiGo",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-1).sp
+                ),
+                color = MaterialTheme.colorScheme.primary
+            )
+        },
+        actions = {
+            IconButton(onClick = onCartClick) {
+                Icon(
+                    Icons.Default.ShoppingCart,
+                    contentDescription = "Cart",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+    )
+}
+
+@Composable
+private fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .shadow(4.dp, RoundedCornerShape(24.dp)),
+        placeholder = { Text("What are you craving?") },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+        shape = RoundedCornerShape(24.dp),
+        singleLine = true,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = Color.Transparent
+        )
+    )
 }
 
 @Composable
@@ -148,7 +170,7 @@ fun PromoBanner() {
         modifier = Modifier
             .fillMaxWidth()
             .height(150.dp)
-            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
     ) {

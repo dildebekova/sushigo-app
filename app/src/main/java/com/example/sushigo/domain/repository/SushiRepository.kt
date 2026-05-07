@@ -1,28 +1,26 @@
 package com.example.sushigo.domain.repository
 
-import com.example.sushigo.data.local.entity.CartEntity
-import com.example.sushigo.data.local.entity.OrderEntity
-import com.example.sushigo.data.local.entity.UserEntity
-import com.example.sushigo.domain.model.Product
-import com.example.sushigo.domain.model.Restaurant
+import com.example.sushigo.domain.model.*
 import kotlinx.coroutines.flow.Flow
 
 interface SushiRepository {
     fun getAllProducts(): Flow<List<Product>>
     fun getProductsByCategory(category: String): Flow<List<Product>>
     suspend fun getProductById(productId: Int): Product?
-    fun getCartItems(): Flow<List<CartEntity>>
+    
+    fun getCartItems(): Flow<List<CartItem>>
     suspend fun addToCart(product: Product)
-    suspend fun updateCartItem(item: CartEntity)
-    suspend fun removeFromCart(cartItem: CartEntity)
+    suspend fun updateCartItem(item: CartItem)
+    suspend fun removeFromCart(item: CartItem)
     suspend fun clearCart()
+    
     fun getRestaurants(): Flow<List<Restaurant>>
 
     // User operations
     suspend fun registerUser(name: String, phone: String)
-    suspend fun loginUser(name: String): UserEntity?
+    suspend fun loginUser(name: String): User?
 
     // Order operations
-    suspend fun placeOrder(order: OrderEntity)
-    fun getOrdersByUserName(userName: String): Flow<List<OrderEntity>>
+    suspend fun placeOrder(order: Order)
+    fun getOrdersByUserName(userName: String): Flow<List<Order>>
 }

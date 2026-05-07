@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.sushigo.domain.model.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -12,32 +13,28 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 
 class UserPreferences @Inject constructor(private val context: Context) {
     companion object {
-        val IS_DARK_MODE = booleanPreferencesKey("is_dark_mode")
-        val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
-        val USER_NAME = stringPreferencesKey("user_name")
-        val USER_PHONE = stringPreferencesKey("user_phone")
+        private val IS_DARK_MODE = booleanPreferencesKey("is_dark_mode")
+        private val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
+        private val USER_NAME = stringPreferencesKey("user_name")
+        private val USER_PHONE = stringPreferencesKey("user_phone")
     }
 
-    val isDarkMode: Flow<Boolean?> = context.dataStore.data.map { preferences ->
-        preferences[IS_DARK_MODE]
-    }
+    val isDarkMode: Flow<Boolean?> = context.dataStore.data.map { it[IS_DARK_MODE] }
 
-    val isLoggedIn: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[IS_LOGGED_IN] ?: false
-    }
+    val isLoggedIn: Flow<Boolean> = context.dataStore.data.map { it[IS_LOGGED_IN] ?: false }
 
-    val userData: Flow<Triple<String, String, Boolean>> = context.dataStore.data.map { preferences ->
-        Triple(
-            preferences[USER_NAME] ?: "",
-            preferences[USER_PHONE] ?: "",
-            preferences[IS_LOGGED_IN] ?: false
+    val userData: Flow<UserSession> = context.dataStore.data.map { preferences ->
+        UserSession(
+            user = User(
+                name = preferences[USER_NAME] ?: "",
+                phone = preferences[USER_PHONE] ?: ""
+            ),
+            isLoggedIn = preferences[IS_LOGGED_IN] ?: false
         )
     }
 
     suspend fun setDarkMode(isDark: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[IS_DARK_MODE] = isDark
-        }
+        context.dataStore.edit { it[IS_DARK_MODE] = isDark }
     }
 
     suspend fun saveUser(name: String, phone: String) {
@@ -55,4 +52,6 @@ class UserPreferences @Inject constructor(private val context: Context) {
             preferences[USER_PHONE] = ""
         }
     }
+
+    data class UserSession(val user: User, val isLoggedIn: Boolean)
 }

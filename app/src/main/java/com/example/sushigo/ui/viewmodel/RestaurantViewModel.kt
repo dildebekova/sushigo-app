@@ -16,11 +16,19 @@ class RestaurantViewModel @Inject constructor(
 ) : ViewModel() {
 
     val restaurants: StateFlow<List<Restaurant>> = repository.getRestaurants()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     private val restaurantId: Int? = savedStateHandle.get<Int>("restaurantId")
     
     val selectedRestaurant: StateFlow<Restaurant?> = restaurants.map { list ->
         list.find { it.id == restaurantId }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
 }

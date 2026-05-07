@@ -14,12 +14,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import com.example.sushigo.data.local.entity.CartEntity
+import com.example.sushigo.R
+import com.example.sushigo.domain.model.CartItem
 import com.example.sushigo.ui.viewmodel.CartViewModel
 import kotlinx.coroutines.flow.collectLatest
 
@@ -29,8 +32,8 @@ fun CartScreen(
     onBackClick: () -> Unit,
     viewModel: CartViewModel = hiltViewModel()
 ) {
-    val cartItems by viewModel.cartItems.collectAsState()
-    val totalPrice by viewModel.totalPrice.collectAsState()
+    val cartItems by viewModel.cartItems.collectAsStateWithLifecycle()
+    val totalPrice by viewModel.totalPrice.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -62,52 +65,15 @@ fun CartScreen(
         },
         bottomBar = {
             if (cartItems.isNotEmpty()) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shadowElevation = 20.dp,
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(24.dp)
-                            .navigationBarsPadding()
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Total", style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                text = "${totalPrice.toInt()} KGS",
-                                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(20.dp))
-                        Button(
-                            onClick = { viewModel.checkout() },
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                        ) {
-                            Text("Checkout", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        }
-                    }
-                }
+                OrderSummaryBottomBar(
+                    totalPrice = totalPrice,
+                    onCheckoutClick = { viewModel.checkout() }
+                )
             }
         }
     ) { padding ->
         if (cartItems.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🛒", fontSize = 80.sp)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("Your cart is empty", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
-                    Text("Time to add something delicious!", color = Color.Gray)
-                }
-            }
+            EmptyCartView(modifier = Modifier.padding(padding))
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
@@ -128,14 +94,71 @@ fun CartScreen(
 }
 
 @Composable
+private fun OrderSummaryBottomBar(
+    totalPrice: Double,
+    onCheckoutClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shadowElevation = 20.dp,
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .navigationBarsPadding()
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Total", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "${totalPrice.toInt()} KGS",
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(
+                onClick = onCheckoutClick,
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Text("Checkout", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyCartView(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("🛒", fontSize = 80.sp)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                "Your cart is empty",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+            )
+            Text("Time to add something delicious!", color = Color.Gray)
+        }
+    }
+}
+
+@Composable
 fun CartItemCard(
-    item: CartEntity,
+    item: CartItem,
     onUpdateQuantity: (Int) -> Unit,
     onRemove: () -> Unit
 ) {
-    Surface(
+    Card(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -150,8 +173,17 @@ fun CartItemCard(
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(item.productName, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                Text("${item.price.toInt()} KGS", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold)
+                Text(
+                    item.productName,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1
+                )
+                Text(
+                    "${item.price.toInt()} KGS",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.ExtraBold
+                )
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
@@ -165,7 +197,7 @@ fun CartItemCard(
                 }
             }
             IconButton(onClick = onRemove) {
-                Icon(Icons.Default.Delete, contentDescription = null, tint = Color.LightGray)
+                Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
             }
         }
     }

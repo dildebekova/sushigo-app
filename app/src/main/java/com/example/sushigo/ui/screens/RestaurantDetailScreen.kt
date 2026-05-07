@@ -1,24 +1,27 @@
 package com.example.sushigo.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.sushigo.ui.viewmodel.RestaurantViewModel
 
@@ -28,7 +31,7 @@ fun RestaurantDetailScreen(
     onBackClick: () -> Unit,
     viewModel: RestaurantViewModel = hiltViewModel()
 ) {
-    val restaurant by viewModel.selectedRestaurant.collectAsState()
+    val restaurant by viewModel.selectedRestaurant.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -53,7 +56,9 @@ fun RestaurantDetailScreen(
     ) { padding ->
         restaurant?.let { res ->
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
             ) {
                 AsyncImage(
                     model = res.image,
@@ -74,7 +79,10 @@ fun RestaurantDetailScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = res.address,
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold)
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-0.5).sp
+                        )
                     )
                     
                     Spacer(modifier = Modifier.height(24.dp))
@@ -92,6 +100,8 @@ fun RestaurantDetailScreen(
                     ) {
                         Text("Show on Map", fontWeight = FontWeight.Bold)
                     }
+
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         } ?: Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -101,7 +111,7 @@ fun RestaurantDetailScreen(
 }
 
 @Composable
-fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, value: String) {
+private fun InfoRow(icon: ImageVector, title: String, value: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Surface(
             shape = RoundedCornerShape(12.dp),
@@ -109,13 +119,21 @@ fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String
             modifier = Modifier.size(44.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
         Spacer(modifier = Modifier.width(16.dp))
         Column {
             Text(text = title, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-            Text(text = value, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+            )
         }
     }
 }

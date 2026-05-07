@@ -2,9 +2,9 @@ package com.example.sushigo.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.sushigo.data.local.entity.CartEntity
-import com.example.sushigo.data.local.entity.OrderEntity
 import com.example.sushigo.data.local.pref.UserPreferences
+import com.example.sushigo.domain.model.CartItem
+import com.example.sushigo.domain.model.Order
 import com.example.sushigo.domain.repository.SushiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -17,23 +17,23 @@ class CartViewModel @Inject constructor(
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
-    val cartItems: StateFlow<List<CartEntity>> = repository.getCartItems()
+    val cartItems: StateFlow<List<CartItem>> = repository.getCartItems()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val totalPrice: StateFlow<Double> = cartItems.map { items ->
-        items.sumOf { it.price * it.quantity }
+        items.sumOf { it.totalLinePrice }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
     private val _checkoutEvent = MutableSharedFlow<CheckoutResult>()
     val checkoutEvent = _checkoutEvent.asSharedFlow()
 
-    fun updateQuantity(item: CartEntity, delta: Int) {
+    fun updateQuantity(item: CartItem, delta: Int) {
         viewModelScope.launch {
             repository.updateCartItem(item.copy(quantity = item.quantity + delta))
         }
     }
 
-    fun removeFromCart(item: CartEntity) {
+    fun removeFromCart(item: CartItem) {
         viewModelScope.launch {
             repository.removeFromCart(item)
         }
@@ -41,13 +41,12 @@ class CartViewModel @Inject constructor(
 
     fun checkout() {
         viewModelScope.launch {
-            // Получаем актуальные данные пользователя напрямую из DataStore
-            val user = userPreferences.userData.first()
-            val userName = user.first
-            val isLoggedIn = user.third
+            val session = userPreferences.userData.first()
+            val userName = session.user.name
+            val isLoggedIn = session.isLoggedIn
 
             if (!isLoggedIn || userName.isBlank()) {
-                _checkoutEvent.emit(CheckoutResult.Error("To place an order, please register"))
+                _checkoutEvent.emit(CheckoutResult.Error("To place an order, please register in settings"))
                 return@launch
             }
 
@@ -55,15 +54,16 @@ class CartViewModel @Inject constructor(
             if (items.isEmpty()) return@launch
 
             val summary = items.joinToString(", ") { "${it.productName} x${it.quantity}" }
-            val order = OrderEntity(
+            val order = Order(
                 userName = userName,
                 itemsSummary = summary,
-                totalPrice = totalPrice.value
+                totalPrice = totalPrice.value,
+                timestamp = System.currentTimeMillis()
             )
 
             repository.placeOrder(order)
             repository.clearCart()
-            _checkoutEvent.emit(CheckoutResult.Success("Your order has been successfully completed"))
+            _checkoutEvent.emit(CheckoutResult.Success("Order placed successfully!"))
         }
     }
 

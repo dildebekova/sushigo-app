@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.sushigo.domain.model.Product
 import com.example.sushigo.ui.viewmodel.CategoryViewModel
@@ -32,7 +32,7 @@ fun CategoryScreen(
     onBackClick: () -> Unit,
     viewModel: CategoryViewModel = hiltViewModel()
 ) {
-    val products by viewModel.products.collectAsState()
+    val products by viewModel.products.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -51,9 +51,7 @@ fun CategoryScreen(
         }
     ) { padding ->
         if (products.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("No items found in this category", style = MaterialTheme.typography.bodyLarge)
-            }
+            EmptyCategoryView(modifier = Modifier.padding(padding))
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
@@ -69,6 +67,21 @@ fun CategoryScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun EmptyCategoryView(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("🔍", fontSize = 64.sp)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                "No items found",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
         }
     }
 }
@@ -117,7 +130,7 @@ fun ProductGridCard(
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(32.dp).clickable { onClick() }
+                        modifier = Modifier.size(32.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text("+", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)

@@ -3,6 +3,7 @@ package com.example.sushigo.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sushigo.data.local.pref.UserPreferences
+import com.example.sushigo.domain.model.User
 import com.example.sushigo.domain.repository.SushiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +28,7 @@ class MainViewModel @Inject constructor(
     val userData = userPreferences.userData.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
-        Triple("", "", false)
+        UserPreferences.UserSession(User("", ""), false)
     )
 
     private val _authError = MutableStateFlow<String?>(null)
@@ -44,19 +45,17 @@ class MainViewModel @Inject constructor(
 
     fun register(name: String, phone: String) {
         if (name.isBlank() || phone.isBlank()) {
-            _authError.value = "Заполните все поля"
+            _authError.value = "Please fill in all fields"
             return
         }
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                println("AuthDebug: Registering user $name")
                 repository.registerUser(name, phone)
                 userPreferences.saveUser(name, phone)
                 _authError.value = null
             } catch (e: Exception) {
-                _authError.value = "Ошибка базы данных: ${e.message}"
-                e.printStackTrace()
+                _authError.value = "Registration error: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
@@ -65,25 +64,21 @@ class MainViewModel @Inject constructor(
 
     fun login(name: String) {
         if (name.isBlank()) {
-            _authError.value = "Введите имя"
+            _authError.value = "Please enter your name"
             return
         }
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                println("AuthDebug: Trying to login user $name")
                 val user = repository.loginUser(name)
                 if (user != null) {
-                    println("AuthDebug: User found, saving to preferences")
                     userPreferences.saveUser(user.name, user.phone)
                     _authError.value = null
                 } else {
-                    println("AuthDebug: User not found in DB")
-                    _authError.value = "Пользователь не найден"
+                    _authError.value = "User not found"
                 }
             } catch (e: Exception) {
-                _authError.value = "Ошибка: ${e.message}"
-                e.printStackTrace()
+                _authError.value = "Login error: ${e.message}"
             } finally {
                 _isLoading.value = false
             }

@@ -1,6 +1,5 @@
 package com.example.sushigo.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,9 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,7 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.sushigo.data.local.entity.OrderEntity
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.sushigo.domain.model.Order
 import com.example.sushigo.ui.viewmodel.NotificationsViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -31,8 +29,8 @@ fun NotificationsScreen(
     onBackClick: () -> Unit,
     viewModel: NotificationsViewModel = hiltViewModel()
 ) {
-    val orders by viewModel.orders.collectAsState()
-    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val orders by viewModel.orders.collectAsStateWithLifecycle()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -49,29 +47,23 @@ fun NotificationsScreen(
         }
     ) { padding ->
         if (!isLoggedIn) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Please register to see your orders", color = Color.Gray)
-            }
+            EmptyStateView(
+                message = "Please register to see your orders",
+                modifier = Modifier.padding(padding)
+            )
         } else if (orders.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.Notifications,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = Color.LightGray
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("No orders yet", style = MaterialTheme.typography.titleMedium, color = Color.Gray)
-                }
-            }
+            EmptyStateView(
+                icon = Icons.Default.Notifications,
+                message = "No orders yet",
+                modifier = Modifier.padding(padding)
+            )
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(orders) { order ->
+                items(orders, key = { it.id }) { order ->
                     OrderCard(order)
                 }
             }
@@ -80,14 +72,39 @@ fun NotificationsScreen(
 }
 
 @Composable
-fun OrderCard(order: OrderEntity) {
-    val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
-    val dateString = dateFormat.format(Date(order.timestamp))
+private fun EmptyStateView(
+    message: String,
+    modifier: Modifier = Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null
+) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (icon != null) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = Color.LightGray
+                )
+            } else {
+                Text("📋", fontSize = 64.sp)
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(message, style = MaterialTheme.typography.titleMedium, color = Color.Gray)
+        }
+    }
+}
+
+@Composable
+fun OrderCard(order: Order) {
+    val dateFormat = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()) }
+    val dateString = remember(order.timestamp) { dateFormat.format(Date(order.timestamp)) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -99,7 +116,11 @@ fun OrderCard(order: OrderEntity) {
                 modifier = Modifier.size(48.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.ShoppingBag, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(
+                        Icons.Default.ShoppingBag,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
             

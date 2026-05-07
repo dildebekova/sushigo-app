@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.sushigo.ui.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,12 +30,14 @@ fun SettingsScreen(
     onNotificationsClick: () -> Unit,
     viewModel: MainViewModel = hiltViewModel()
 ) {
-    val isDarkMode by viewModel.isDarkMode.collectAsState()
-    val userData by viewModel.userData.collectAsState()
-    val authError by viewModel.authError.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val isDarkMode by viewModel.isDarkMode.collectAsStateWithLifecycle()
+    val userSession by viewModel.userData.collectAsStateWithLifecycle()
+    val authError by viewModel.authError.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
-    val (userName, userPhone, isLoggedIn) = userData
+    val userName = userSession.user.name
+    val userPhone = userSession.user.phone
+    val isLoggedIn = userSession.isLoggedIn
 
     var isRegisterMode by remember { mutableStateOf(false) }
     var nameInput by remember { mutableStateOf("") }
@@ -100,7 +103,8 @@ fun SettingsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(8.dp)) {
                     SettingsToggleItem(
@@ -109,8 +113,9 @@ fun SettingsScreen(
                         checked = isDarkMode ?: false,
                         onCheckedChange = { viewModel.toggleTheme(it) }
                     )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
                     SettingsNavigationItem(Icons.Default.Notifications, "Notifications", onClick = onNotificationsClick)
-                    SettingsNavigationItem(Icons.Default.Favorite, "Favorites", onClick = {})
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
                     SettingsNavigationItem(Icons.Default.Info, "About App", onClick = {})
                 }
             }
@@ -127,7 +132,7 @@ fun SettingsScreen(
 }
 
 @Composable
-fun UserProfileHeader(name: String, phone: String) {
+private fun UserProfileHeader(name: String, phone: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
             modifier = Modifier.size(100.dp),
@@ -135,7 +140,12 @@ fun UserProfileHeader(name: String, phone: String) {
             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Person, null, modifier = Modifier.size(50.dp), tint = MaterialTheme.colorScheme.primary)
+                Icon(
+                    Icons.Default.Person,
+                    null,
+                    modifier = Modifier.size(50.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -145,7 +155,7 @@ fun UserProfileHeader(name: String, phone: String) {
 }
 
 @Composable
-fun AuthForm(
+private fun AuthForm(
     isRegisterMode: Boolean,
     nameValue: String,
     phoneValue: String,
@@ -188,7 +198,12 @@ fun AuthForm(
         }
 
         if (error != null) {
-            Text(error, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+            Text(
+                error,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 8.dp),
+                style = MaterialTheme.typography.bodySmall
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -200,20 +215,27 @@ fun AuthForm(
             enabled = !isLoading && nameValue.isNotBlank()
         ) {
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
             } else {
                 Text(if (isRegisterMode) "Create Account" else "Login", fontWeight = FontWeight.Bold)
             }
         }
 
         TextButton(onClick = onToggleMode, enabled = !isLoading) {
-            Text(if (isRegisterMode) "Already have account? Login" else "No account? Register")
+            Text(
+                if (isRegisterMode) "Already have account? Login" else "No account? Register",
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 }
 
 @Composable
-fun SettingsNavigationItem(icon: ImageVector, title: String, onClick: () -> Unit) {
+private fun SettingsNavigationItem(icon: ImageVector, title: String, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         color = Color.Transparent,
@@ -223,21 +245,40 @@ fun SettingsNavigationItem(icon: ImageVector, title: String, onClick: () -> Unit
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+            Icon(
+                icon,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
             Spacer(modifier = Modifier.width(16.dp))
             Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.LightGray)
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
 
 @Composable
-fun SettingsToggleItem(icon: ImageVector, title: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+private fun SettingsToggleItem(
+    icon: ImageVector,
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+        Icon(
+            icon,
+            null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
         Spacer(modifier = Modifier.width(16.dp))
         Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
         Switch(
