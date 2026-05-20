@@ -8,17 +8,17 @@ interface SushiRepository {
     fun getProductsByCategory(category: String): Flow<List<Product>>
     suspend fun getProductById(productId: Int): Product?
     
-    fun getCartItems(): Flow<List<CartItem>>
-    suspend fun addToCart(product: Product)
+    fun getCartItems(userName: String): Flow<List<CartItem>>
+    suspend fun addToCart(product: Product, userName: String)
     suspend fun updateCartItem(item: CartItem)
     suspend fun removeFromCart(item: CartItem)
-    suspend fun clearCart()
+    suspend fun clearCart(userName: String)
     
     fun getRestaurants(): Flow<List<Restaurant>>
 
     // User operations
-    suspend fun registerUser(name: String, phone: String)
-    suspend fun loginUser(name: String): User?
+    suspend fun registerUser(name: String, phone: String, password: String)
+    suspend fun loginUser(name: String, password: String): User?
 
     // Order operations
     suspend fun placeOrder(order: Order)

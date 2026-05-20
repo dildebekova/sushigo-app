@@ -27,18 +27,19 @@ class SushiRepositoryImpl @Inject constructor(
         return sushiDao.getProductById(productId)?.toDomain()
     }
 
-    override fun getCartItems(): Flow<List<CartItem>> {
-        return sushiDao.getCartItems()
+    override fun getCartItems(userName: String): Flow<List<CartItem>> {
+        return sushiDao.getCartItems(userName)
             .map { entities -> entities.map { it.toDomain() } }
     }
 
-    override suspend fun addToCart(product: Product) {
-        val existingItem = sushiDao.getCartItemByProduct(product.id)
+    override suspend fun addToCart(product: Product, userName: String) {
+        val existingItem = sushiDao.getCartItemByProduct(product.id, userName)
         if (existingItem != null) {
             sushiDao.updateCartItem(existingItem.copy(quantity = existingItem.quantity + 1))
         } else {
             sushiDao.addToCart(
                 CartEntity(
+                    userName = userName,
                     productId = product.id,
                     productName = product.name,
                     price = product.price,
@@ -61,8 +62,8 @@ class SushiRepositoryImpl @Inject constructor(
         sushiDao.removeFromCart(item.toEntity())
     }
 
-    override suspend fun clearCart() {
-        sushiDao.clearCart()
+    override suspend fun clearCart(userName: String) {
+        sushiDao.clearCart(userName)
     }
 
     override fun getRestaurants(): Flow<List<Restaurant>> {
@@ -71,12 +72,13 @@ class SushiRepositoryImpl @Inject constructor(
             .map { entities -> entities.map { it.toDomain() } }
     }
 
-    override suspend fun registerUser(name: String, phone: String) {
-        sushiDao.insertUser(UserEntity(name, phone))
+    override suspend fun registerUser(name: String, phone: String, password: String) {
+        sushiDao.insertUser(UserEntity(name, phone, password))
     }
 
-    override suspend fun loginUser(name: String): User? {
-        return sushiDao.getUserByName(name)?.toDomain()
+    override suspend fun loginUser(name: String, password: String): User? {
+        val user = sushiDao.getUserByName(name)?.toDomain()
+        return if (user?.password == password) user else null
     }
 
     override suspend fun placeOrder(order: Order) {

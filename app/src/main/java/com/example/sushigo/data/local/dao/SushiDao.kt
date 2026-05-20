@@ -22,11 +22,11 @@ interface SushiDao {
     suspend fun insertProducts(products: List<ProductEntity>)
 
     // Cart operations
-    @Query("SELECT * FROM cart")
-    fun getCartItems(): Flow<List<CartEntity>>
+    @Query("SELECT * FROM cart WHERE userName = :userName")
+    fun getCartItems(userName: String): Flow<List<CartEntity>>
 
-    @Query("SELECT * FROM cart WHERE productId = :productId")
-    suspend fun getCartItemByProduct(productId: Int): CartEntity?
+    @Query("SELECT * FROM cart WHERE productId = :productId AND userName = :userName")
+    suspend fun getCartItemByProduct(productId: Int, userName: String): CartEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addToCart(cartEntity: CartEntity)
@@ -37,8 +37,8 @@ interface SushiDao {
     @Delete
     suspend fun removeFromCart(cartEntity: CartEntity)
 
-    @Query("DELETE FROM cart")
-    suspend fun clearCart()
+    @Query("DELETE FROM cart WHERE userName = :userName")
+    suspend fun clearCart(userName: String)
 
     // Restaurant operations
     @Query("SELECT * FROM restaurants")

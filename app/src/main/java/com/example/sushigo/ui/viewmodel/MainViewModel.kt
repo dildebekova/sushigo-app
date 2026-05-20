@@ -43,15 +43,15 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun register(name: String, phone: String) {
-        if (name.isBlank() || phone.isBlank()) {
+    fun register(name: String, phone: String, password: String) {
+        if (name.isBlank() || phone.isBlank() || password.isBlank()) {
             _authError.value = "Please fill in all fields"
             return
         }
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                repository.registerUser(name, phone)
+                repository.registerUser(name, phone, password)
                 userPreferences.saveUser(name, phone)
                 _authError.value = null
             } catch (e: Exception) {
@@ -62,20 +62,20 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun login(name: String) {
-        if (name.isBlank()) {
-            _authError.value = "Please enter your name"
+    fun login(name: String, password: String) {
+        if (name.isBlank() || password.isBlank()) {
+            _authError.value = "Please enter name and password"
             return
         }
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val user = repository.loginUser(name)
+                val user = repository.loginUser(name, password)
                 if (user != null) {
                     userPreferences.saveUser(user.name, user.phone)
                     _authError.value = null
                 } else {
-                    _authError.value = "User not found"
+                    _authError.value = "Invalid name or password"
                 }
             } catch (e: Exception) {
                 _authError.value = "Login error: ${e.message}"

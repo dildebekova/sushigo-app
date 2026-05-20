@@ -18,6 +18,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -42,6 +44,7 @@ fun SettingsScreen(
     var isRegisterMode by remember { mutableStateOf(false) }
     var nameInput by remember { mutableStateOf("") }
     var phoneInput by remember { mutableStateOf("") }
+    var passwordInput by remember { mutableStateOf("") }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -83,16 +86,18 @@ fun SettingsScreen(
                     isRegisterMode = isRegisterMode,
                     nameValue = nameInput,
                     phoneValue = phoneInput,
+                    passwordValue = passwordInput,
                     isLoading = isLoading,
                     error = authError,
                     onNameChange = { nameInput = it; viewModel.clearError() },
                     onPhoneChange = { phoneInput = it; viewModel.clearError() },
+                    onPasswordChange = { passwordInput = it; viewModel.clearError() },
                     onToggleMode = { isRegisterMode = !isRegisterMode; viewModel.clearError() },
                     onActionClick = {
                         if (isRegisterMode) {
-                            viewModel.register(nameInput, phoneInput)
+                            viewModel.register(nameInput, phoneInput, passwordInput)
                         } else {
-                            viewModel.login(nameInput)
+                            viewModel.login(nameInput, passwordInput)
                         }
                     }
                 )
@@ -159,13 +164,17 @@ private fun AuthForm(
     isRegisterMode: Boolean,
     nameValue: String,
     phoneValue: String,
+    passwordValue: String,
     isLoading: Boolean,
     error: String?,
     onNameChange: (String) -> Unit,
     onPhoneChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
     onToggleMode: () -> Unit,
     onActionClick: () -> Unit
 ) {
+    var passwordVisible by remember { mutableStateOf(false) }
+
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             if (isRegisterMode) "Register" else "Login",
@@ -197,6 +206,24 @@ private fun AuthForm(
             )
         }
 
+        OutlinedTextField(
+            value = passwordValue,
+            onValueChange = onPasswordChange,
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            shape = RoundedCornerShape(16.dp),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(image, contentDescription = null)
+                }
+            },
+            singleLine = true,
+            enabled = !isLoading
+        )
+
         if (error != null) {
             Text(
                 error,
@@ -212,7 +239,7 @@ private fun AuthForm(
             onClick = onActionClick,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            enabled = !isLoading && nameValue.isNotBlank()
+            enabled = !isLoading && nameValue.isNotBlank() && passwordValue.isNotBlank()
         ) {
             if (isLoading) {
                 CircularProgressIndicator(

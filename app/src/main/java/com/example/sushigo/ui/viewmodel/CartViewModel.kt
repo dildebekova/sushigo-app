@@ -7,6 +7,7 @@ import com.example.sushigo.domain.model.CartItem
 import com.example.sushigo.domain.model.Order
 import com.example.sushigo.domain.repository.SushiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -17,7 +18,11 @@ class CartViewModel @Inject constructor(
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
-    val cartItems: StateFlow<List<CartItem>> = repository.getCartItems()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val cartItems: StateFlow<List<CartItem>> = userPreferences.userData
+        .flatMapLatest { session ->
+            repository.getCartItems(session.user.name)
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val totalPrice: StateFlow<Double> = cartItems.map { items ->
@@ -62,7 +67,7 @@ class CartViewModel @Inject constructor(
             )
 
             repository.placeOrder(order)
-            repository.clearCart()
+            repository.clearCart(userName)
             _checkoutEvent.emit(CheckoutResult.Success("Order placed successfully!"))
         }
     }

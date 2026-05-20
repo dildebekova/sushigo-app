@@ -13,7 +13,7 @@ import com.example.sushigo.data.local.entity.*
         UserEntity::class,
         OrderEntity::class
     ],
-    version = 3,
+    version = 5,
     exportSchema = false
 )
 abstract class SushiDatabase : RoomDatabase() {

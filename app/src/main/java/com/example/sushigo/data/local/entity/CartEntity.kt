@@ -7,6 +7,7 @@ import com.example.sushigo.domain.model.CartItem
 @Entity(tableName = "cart")
 data class CartEntity(
     @PrimaryKey(autoGenerate = true) val cartId: Int = 0,
+    val userName: String,
     val productId: Int,
     val productName: String,
     val price: Double,
@@ -16,6 +17,7 @@ data class CartEntity(
 
 fun CartEntity.toDomain() = CartItem(
     cartId = cartId,
+    userName = userName,
     productId = productId,
     productName = productName,
     price = price,
@@ -25,6 +27,7 @@ fun CartEntity.toDomain() = CartItem(
 
 fun CartItem.toEntity() = CartEntity(
     cartId = cartId,
+    userName = userName,
     productId = productId,
     productName = productName,
     price = price,

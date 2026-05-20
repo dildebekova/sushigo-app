@@ -2,6 +2,7 @@ package com.example.sushigo.domain.model
 
 data class CartItem(
     val cartId: Int = 0,
+    val userName: String = "",
     val productId: Int,
     val productName: String,
     val price: Double,
